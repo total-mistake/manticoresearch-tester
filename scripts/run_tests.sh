@@ -50,45 +50,90 @@ log_success() {
 }
 
 # Predefined test queries in Russian based on the available documentation
+# Updated with more natural language formulations and better coverage
 declare -a TEST_QUERIES=(
-    "Как работает автоматизация в онлайн казино?"
-    "Что такое баллы и как их использовать?"
-    "Цели и задачи проекта"
-    "Настройка домена и FTP доступ"
-    "Адаптивные шаблоны и мобильная версия"
-    "Будет ли реклама на моем сайте?"
-    "Что происходит с сайтом после истечения тарифа?"
-    "Как добавить отзывы на главную страницу?"
-    "Что такое robots.txt файл?"
-    "Эффективные методы контент маркетинга"
-    "Есть ли у вас тестовый период?"
-    "Подробные видеоинструкции по использованию"
-    "Центр конфиденциальности и защита данных"
-    "Дополнительные преимущества собственного домена"
-    "Потеря данных при смене шаблона"
+    # Core functionality questions
+    "Заменят ли роботы живых дилеров в казино?"
+    "Как работает система баллов?"
+    "Какие цели у проекта?"
+    "Есть ли доступ по FTP?"
+    "Поддерживается ли мобильная версия сайта?"
+    
+    # Service questions  
+    "Будет ли на сайте реклама?"
+    "Что случится после окончания подписки?"
+    "Как добавить отзывы клиентов?"
+    "Что такое файл robots.txt?"
+    "Как продвигать контент?"
+    
+    # Support and features
+    "Есть ли пробный период?"
+    "Где найти видеоуроки?"
+    "Как защищены личные данные?"
+    "Зачем нужен собственный домен?"
+    "Сохранятся ли данные при смене темы?"
+    
+    # Additional natural variations for better semantic coverage
+    "Автоматизация игровых процессов"
+    "Система бонусов и баллов"
+    "Адаптивный дизайн сайта"
+    "Безопасность и конфиденциальность"
+    "Преимущества домена"
+    
+    # Alternative formulations and synonyms
+    "Можно ли получить пробную версию?"
+    "Что делать если домен не работает?"
+    "Как настроить отображение отзывов?"
+    "Нужно ли добавлять описания к услугам?"
+    "Активирован ли email отправителя?"
+    "Потребуется ли дополнительная настройка?"
+    "Какие разделы можно добавить к статьям?"
 )
 
 
 
-# Function to get expected result count
+# Function to get expected result count based on actual content analysis
 get_expected_results() {
     local query="$1"
     case "$query" in
-        "Как работает автоматизация в онлайн казино?") echo "1" ;;
-        "Что такое баллы и как их использовать?") echo "2" ;;
-        "Цели и задачи проекта") echo "1" ;;
-        "Настройка домена и FTP доступ") echo "2" ;;
-        "Адаптивные шаблоны и мобильная версия") echo "1" ;;
-        "Будет ли реклама на моем сайте?") echo "1" ;;
-        "Что происходит с сайтом после истечения тарифа?") echo "1" ;;
-        "Как добавить отзывы на главную страницу?") echo "1" ;;
-        "Что такое robots.txt файл?") echo "1" ;;
-        "Эффективные методы контент маркетинга") echo "1" ;;
-        "Есть ли у вас тестовый период?") echo "1" ;;
-        "Подробные видеоинструкции по использованию") echo "1" ;;
-        "Центр конфиденциальности и защита данных") echo "1" ;;
-        "Дополнительные преимущества собственного домена") echo "1" ;;
-        "Потеря данных при смене шаблона") echo "1" ;;
+        # Core functionality - these should match specific documents
+        "Заменят ли роботы живых дилеров в казино?") echo "1" ;;  # avtomatizatsiya_v_onlayn_kazino.md
+        "Как работает система баллов?") echo "2" ;;              # chto_takoe_ball.md + chto_takoe_bonusy.md
+        "Какие цели у проекта?") echo "1" ;;                     # celi_proekta.md
+        "Есть ли доступ по FTP?") echo "1" ;;                    # dostup_k_sajtu_cherez_ftp_soedinenie.md
+        "Поддерживается ли мобильная версия сайта?") echo "1" ;; # est_li_u_vas_adaptivnyj_shablon.md
+        
+        # Service questions
+        "Будет ли на сайте реклама?") echo "1" ;;                # budet_li_na_moem_sajte_reklama.md
+        "Что случится после окончания подписки?") echo "1" ;;    # chto_budet_s_sajtom_posle_istecheniya_tarifa_biznes.md
+        "Как добавить отзывы клиентов?") echo "1" ;;             # dobavit_blok_otzyvy_na_glavnyu.md
+        "Что такое файл robots.txt?") echo "1" ;;                # chto_takoe_robots_txt.md
+        "Как продвигать контент?") echo "1" ;;                   # effektivnyye_metody_kontent_marketinga_ot_teksta_do_video.md
+        
+        # Support and features  
+        "Есть ли пробный период?") echo "1" ;;                   # est_li_u_vas_testovyj_period.md
+        "Где найти видеоуроки?") echo "1" ;;                     # est_li_podrobnye_videoinstrukcii.md
+        "Как защищены личные данные?") echo "1" ;;               # centr_konfidencialnosti.md
+        "Зачем нужен собственный домен?") echo "1" ;;            # dopolnitelnye_preimushhestva_sobstvennogo_domena.md
+        "Сохранятся ли данные при смене темы?") echo "1" ;;      # budut_li_uteryany_dannye_pri_smene_shablona.md
+        
+        # Additional natural variations (semantic matches)
+        "Автоматизация игровых процессов") echo "1" ;;           # avtomatizatsiya_v_onlayn_kazino.md  
+        "Система бонусов и баллов") echo "2" ;;                  # chto_takoe_ball.md + chto_takoe_bonusy.md
+        "Адаптивный дизайн сайта") echo "1" ;;                   # est_li_u_vas_adaptivnyj_shablon.md
+        "Безопасность и конфиденциальность") echo "1" ;;         # centr_konfidencialnosti.md
+        "Преимущества домена") echo "1" ;;                       # dopolnitelnye_preimushhestva_sobstvennogo_domena.md
+        
+        # Alternative formulations and synonyms
+        "Можно ли получить пробную версию?") echo "1" ;;         # est_li_u_vas_testovyj_period.md
+        "Что делать если домен не работает?") echo "1" ;;        # domen_porabotal_neskolko_chasov.md 
+        "Как настроить отображение отзывов?") echo "1" ;;        # dobavit_blok_otzyvy_na_glavnyu.md
+        "Нужно ли добавлять описания к услугам?") echo "1" ;;    # dobavit_opisanie_k_uslugam.md
+        "Активирован ли email отправителя?") echo "1" ;;         # email_otpravitelya_ne_aktivirovan.md
+        "Потребуется ли дополнительная настройка?") echo "1" ;;  # semantic match
+        "Какие разделы можно добавить к статьям?") echo "1" ;;   # dobavit_razdely_k_statyam.md
+        
+        # Default fallback for any other query
         *) echo "1" ;;
     esac
 }
@@ -247,7 +292,7 @@ execute_test_query() {
         has_results=true
         
         if command -v jq >/dev/null 2>&1; then
-            total_results=$(echo "$search_output" | jq -r '.total // 0' 2>/dev/null || echo "0")
+            total_results=$(echo "$search_output" | jq -r '.hits.total // .total // 0' 2>/dev/null || echo "0")
             search_time=$(echo "$search_output" | jq -r '.took // 0' 2>/dev/null || echo "0")
             top_score=$(echo "$search_output" | jq -r '.hits.hits[0]._score // .hits[0]._score // 0' 2>/dev/null || echo "0")
         else
