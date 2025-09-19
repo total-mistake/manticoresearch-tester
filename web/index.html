@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manticore Search AI - Поиск по документам</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .search-section {
+            padding: 40px;
+            background: #f8f9fa;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 300px;
+            padding: 15px 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-button {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+
+        .search-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .search-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .search-options {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .search-options label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #6c757d;
+        }
+
+        .search-options input[type="number"] {
+            width: 80px;
+            padding: 8px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .loading .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results-section {
+            padding: 0 40px 40px;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .results-info {
+            color: #6c757d;
+            font-size: 14px;
+        }
+
+        .performance-info {
+            display: flex;
+            gap: 20px;
+            font-size: 12px;
+            color: #868e96;
+        }
+
+        .result-item {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .result-item:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .result-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .result-url {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+            word-break: break-all;
+        }
+
+        .result-url:hover {
+            text-decoration: underline;
+        }
+
+        .result-score {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .result-score.high-score {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+
+        .result-score.medium-score {
+            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+        }
+
+        .result-score.low-score {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        }
+
+        .result-content {
+            color: #495057;
+            line-height: 1.6;
+            font-size: 15px;
+        }
+
+        .result-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #f1f3f4;
+            font-size: 12px;
+            color: #868e96;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .no-results h3 {
+            margin-bottom: 15px;
+            color: #495057;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #f5c6cb;
+        }
+
+        .suggestions {
+            background: #d1ecf1;
+            color: #0c5460;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .suggestions h4 {
+            margin-bottom: 10px;
+        }
+
+        .suggestions ul {
+            margin-left: 20px;
+        }
+
+        .suggestions li {
+            margin-bottom: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 8px;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .search-section {
+                padding: 20px;
+            }
+
+            .search-form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-input {
+                min-width: auto;
+            }
+
+            .search-options {
+                justify-content: center;
+            }
+
+            .results-section {
+                padding: 0 20px 20px;
+            }
+
+            .result-item {
+                padding: 20px;
+            }
+
+            .results-header {
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
+            }
+
+            .performance-info {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Manticore Search AI</h1>
+            <p>Семантический поиск по документам с поддержкой естественного языка</p>
+        </div>
+
+        <div class="search-section">
+            <form class="search-form" id="searchForm">
+                <input 
+                    type="text" 
+                    class="search-input" 
+                    id="searchInput" 
+                    placeholder="Введите ваш запрос на естественном языке..."
+                    required
+                >
+                <button type="submit" class="search-button" id="searchButton">
+                    Найти
+                </button>
+            </form>
+
+            <div class="search-options">
+                <label>
+                    Лимит результатов:
+                    <input type="number" id="limitInput" value="10" min="1" max="100">
+                </label>
+                <label>
+                    <input type="checkbox" id="verboseMode"> Подробный режим
+                </label>
+            </div>
+        </div>
+
+        <div id="loadingSection" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Выполняется поиск...</p>
+        </div>
+
+        <div class="results-section" id="resultsSection" style="display: none;">
+            <div class="results-header">
+                <div class="results-info" id="resultsInfo"></div>
+                <div class="performance-info" id="performanceInfo"></div>
+            </div>
+            <div id="resultsContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        class ManticoreSearchUI {
+            constructor() {
+                this.baseUrl = 'http://localhost:3000'; // Proxy server
+                this.initializeEventListeners();
+                this.loadExampleQueries();
+            }
+
+            initializeEventListeners() {
+                const searchForm = document.getElementById('searchForm');
+                const searchInput = document.getElementById('searchInput');
+
+                searchForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.performSearch();
+                });
+
+                // Search on Enter key
+                searchInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        this.performSearch();
+                    }
+                });
+            }
+
+            loadExampleQueries() {
+                const examples = [
+                    "Как настроить автоматизацию в онлайн казино?",
+                    "Есть ли доступ по FTP?",
+                    "Поддерживается ли мобильная версия?",
+                    "Что случится после окончания подписки?",
+                    "Как защищены личные данные?"
+                ];
+
+                const searchInput = document.getElementById('searchInput');
+                let currentExample = 0;
+
+                // Rotate example placeholder every 3 seconds
+                setInterval(() => {
+                    searchInput.placeholder = examples[currentExample];
+                    currentExample = (currentExample + 1) % examples.length;
+                }, 3000);
+            }
+
+            async performSearch() {
+                const query = document.getElementById('searchInput').value.trim();
+                const limit = parseInt(document.getElementById('limitInput').value) || 10;
+                const verbose = document.getElementById('verboseMode').checked;
+
+                if (!query) {
+                    alert('Пожалуйста, введите поисковый запрос');
+                    return;
+                }
+
+                this.showLoading();
+                this.hideResults();
+                this.hideError();
+
+                const startTime = Date.now();
+
+                try {
+                    console.log(`[${new Date().toISOString()}] Начинаем поиск: "${query}"`);
+                    
+                    const response = await fetch(`${this.baseUrl}/search`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            query: query,
+                            limit: limit,
+                            verbose: verbose
+                        })
+                    });
+
+                    const endTime = Date.now();
+                    const totalTime = endTime - startTime;
+
+                    console.log(`[${new Date().toISOString()}] Поиск завершен за ${totalTime}ms`);
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    const data = await response.json();
+                    console.log(`[${new Date().toISOString()}] Получены результаты:`, data);
+
+                    this.hideLoading();
+                    this.displayResults(data, query, totalTime);
+
+                } catch (error) {
+                    console.error(`[${new Date().toISOString()}] Ошибка поиска:`, error);
+                    this.hideLoading();
+                    this.showError(error.message);
+                }
+            }
+
+            showLoading() {
+                document.getElementById('loadingSection').style.display = 'block';
+                document.getElementById('searchButton').disabled = true;
+                document.getElementById('searchButton').textContent = 'Поиск...';
+            }
+
+            hideLoading() {
+                document.getElementById('loadingSection').style.display = 'none';
+                document.getElementById('searchButton').disabled = false;
+                document.getElementById('searchButton').textContent = 'Найти';
+            }
+
+            showResults() {
+                document.getElementById('resultsSection').style.display = 'block';
+            }
+
+            hideResults() {
+                document.getElementById('resultsSection').style.display = 'none';
+            }
+
+            showError(message) {
+                const resultsContainer = document.getElementById('resultsContainer');
+                resultsContainer.innerHTML = `
+                    <div class="error-message">
+                        <strong>Ошибка поиска:</strong> ${message}
+                        <div class="suggestions">
+                            <h4>Попробуйте:</h4>
+                            <ul>
+                                <li>Проверить, запущен ли Manticore Search (выполните setup.sh)</li>
+                                <li>Убедиться, что данные импортированы (выполните import_data.sh)</li>
+                                <li>Использовать другие ключевые слова</li>
+                                <li>Проверить подключение к серверу</li>
+                            </ul>
+                        </div>
+                    </div>
+                `;
+                this.showResults();
+            }
+
+            hideError() {
+                // Error will be hidden when results are displayed
+            }
+
+            displayResults(data, query, totalTime) {
+                const resultsInfo = document.getElementById('resultsInfo');
+                const performanceInfo = document.getElementById('performanceInfo');
+                const resultsContainer = document.getElementById('resultsContainer');
+
+                // Display performance info
+                resultsInfo.textContent = `Найдено результатов: ${data.total || 0} для запроса "${query}"`;
+                performanceInfo.innerHTML = `
+                    <span>Общее время: ${totalTime}ms</span>
+                    <span>Время поиска: ${data.took || 'N/A'}ms</span>
+                    <span>Максимальный score: ${data.max_score || 'N/A'}</span>
+                `;
+
+                // Clear previous results
+                resultsContainer.innerHTML = '';
+
+                if (!data.hits || data.hits.length === 0) {
+                    resultsContainer.innerHTML = `
+                        <div class="no-results">
+                            <h3>Результаты не найдены</h3>
+                            <p>Попробуйте изменить поисковый запрос или использовать другие ключевые слова.</p>
+                            <div class="suggestions">
+                                <h4>Рекомендации:</h4>
+                                <ul>
+                                    <li>Используйте более общие термины</li>
+                                    <li>Проверьте правописание</li>
+                                    <li>Попробуйте синонимы</li>
+                                    <li>Убедитесь, что индекс содержит релевантные документы</li>
+                                </ul>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Display results
+                    data.hits.forEach((hit, index) => {
+                        const resultElement = this.createResultElement(hit, index + 1);
+                        resultsContainer.appendChild(resultElement);
+                    });
+                }
+
+                this.showResults();
+                
+                // Log to console for debugging
+                console.log(`[${new Date().toISOString()}] Отображено ${data.hits?.length || 0} результатов`);
+            }
+
+            createResultElement(hit, position) {
+                const resultDiv = document.createElement('div');
+                resultDiv.className = 'result-item';
+
+                const score = hit._score || hit.score || 0;
+                const source = hit._source || hit;
+                const title = source.title || 'Без названия';
+                const url = source.url || '#';
+                const content = source.content || 'Содержимое недоступно';
+                const id = hit._id || hit.id || position;
+
+                // Truncate content if too long
+                const truncatedContent = content.length > 300 
+                    ? content.substring(0, 300) + '...' 
+                    : content;
+
+                // Format score as percentage
+                const scorePercentage = Math.round(score * 100);
+                const scoreClass = scorePercentage >= 80 ? 'high-score' : 
+                                 scorePercentage >= 50 ? 'medium-score' : 'low-score';
+
+                resultDiv.innerHTML = `
+                    <div class="result-header">
+                        <div>
+                            <div class="result-title">${this.escapeHtml(title)}</div>
+                            <a href="${this.escapeHtml(url)}" class="result-url" target="_blank" rel="noopener">
+                                ${this.escapeHtml(url)}
+                            </a>
+                        </div>
+                        <div class="result-score ${scoreClass}">
+                            Score: ${scorePercentage}
+                        </div>
+                    </div>
+                    <div class="result-content">
+                        ${this.escapeHtml(truncatedContent)}
+                    </div>
+                    <div class="result-meta">
+                        <span>Позиция: #${position}</span>
+                        <span>ID: ${id}</span>
+                    </div>
+                `;
+
+                return resultDiv;
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+        }
+
+        // Initialize the search UI when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new ManticoreSearchUI();
+            console.log(`[${new Date().toISOString()}] Manticore Search UI инициализирован`);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+{
+  "name": "manticore-search-ui",
+  "version": "1.0.0",
+  "description": "Web UI for Manticore Search AI Testing Framework",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "install-deps": "npm install",
+    "setup": "npm install && echo 'Dependencies installed. Run npm start to start the server.'"
+  },
+  "keywords": [
+    "manticore",
+    "search",
+    "ai",
+    "semantic-search",
+    "web-ui"
+  ],
+  "author": "Manticore Search AI Tester",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
