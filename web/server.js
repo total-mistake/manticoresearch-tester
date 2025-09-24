@@ -35,7 +35,7 @@ function log(message, level = 'INFO') {
     try {
         fs.appendFileSync(logFilePath, logMessage + '\n');
     } catch (error) {
-        console.error(`Failed to write to log file: ${error.message}`);
+        // Игнорируем ошибки записи в файл
     }
 }
 
@@ -68,26 +68,46 @@ async function checkManticoreHealth() {
 // Execute search using the existing script
 async function executeSearch(query, options = {}) {
     const startTime = Date.now();
+    const engine = options.engine || 'manticore';
     
     return new Promise((resolve, reject) => {
         const args = [];
+        let scriptName;
         
-        // Add options
-        if (options.limit) {
-            args.push('--limit', options.limit.toString());
+        // Choose script based on engine
+        if (engine === 'sphinx') {
+            scriptName = './scripts/sphinx_search.sh';
+            args.push('-s', query);
+            
+            // Add options for Sphinx
+            if (options.limit) {
+                args.push('--limit', options.limit.toString());
+            }
+            
+            if (options.verbose) {
+                args.push('--verbose');
+            }
+            
+            args.push('--json');
+        } else {
+            scriptName = './scripts/search_nl.sh';
+            
+            // Add options for Manticore
+            if (options.limit) {
+                args.push('--limit', options.limit.toString());
+            }
+            
+            if (options.verbose) {
+                args.push('--verbose');
+            }
+            
+            args.push('--json');
+            args.push(query);
         }
-        
-        if (options.verbose) {
-            args.push('--verbose');
-        }
-        
-        // Always use JSON output for API
-        args.push('--json');
-        args.push(query);
 
-        log(`Executing search: ${query} with args: ${args.join(' ')}`);
+        log(`Executing ${engine} search: ${query} with args: ${args.join(' ')}`);
 
-        const searchProcess = spawn('./scripts/search_nl.sh', args, {
+        const searchProcess = spawn(scriptName, args, {
             cwd: path.join(__dirname, '..'),
             stdio: 'pipe'
         });
@@ -252,7 +272,7 @@ app.get('/health', async (req, res) => {
 
 // Search endpoint
 app.post('/search', async (req, res) => {
-    const { query, limit = 10, verbose = false } = req.body;
+    const { query, limit = 10, verbose = false, engine = 'manticore' } = req.body;
     const clientIP = req.ip || req.connection.remoteAddress || 'unknown';
     
     if (!query || typeof query !== 'string' || query.trim().length === 0) {
@@ -264,14 +284,16 @@ app.post('/search', async (req, res) => {
 
     const trimmedQuery = query.trim();
     const searchLimit = Math.min(Math.max(1, parseInt(limit) || 10), 100);
+    const searchEngine = ['manticore', 'sphinx'].includes(engine) ? engine : 'manticore';
     
-    log(`Search request from ${clientIP}: "${trimmedQuery}" (limit: ${searchLimit}, verbose: ${verbose})`);
+    log(`Search request from ${clientIP}: "${trimmedQuery}" via ${searchEngine} (limit: ${searchLimit}, verbose: ${verbose})`);
 
     try {
         const startTime = Date.now();
         const result = await executeSearch(trimmedQuery, {
             limit: searchLimit,
-            verbose: Boolean(verbose)
+            verbose: Boolean(verbose),
+            engine: searchEngine
         });
         const endTime = Date.now();
         const totalTime = endTime - startTime;

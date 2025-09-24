@@ -184,9 +184,8 @@ create_search_index() {
     log_info "Creating search index with Auto Embeddings configuration..."
     
     # First, drop the index if it exists
-    local drop_response=$(curl -s -X POST "$BASE_URL/cli" \
-        -H "Content-Type: application/json" \
-        -d "{\"query\": \"DROP TABLE IF EXISTS $INDEX_NAME\"}")
+    local drop_response=$(curl -s -X POST "$BASE_URL/sql?mode=raw" \
+        -d "DROP TABLE IF EXISTS $INDEX_NAME")
     
     log_debug "Drop index response: $drop_response"
     
@@ -194,36 +193,21 @@ create_search_index() {
     local create_query="CREATE TABLE $INDEX_NAME (
         title TEXT,
         url STRING,
-        content TEXT
+        content TEXT,
+        vector FLOAT_VECTOR KNN_TYPE='hnsw' HNSW_SIMILARITY='l2'
+        MODEL_NAME='sergeyzh/BERTA'
+        FROM='title,content'
     ) engine='columnar'"
     
-    local create_response=$(curl -s -X POST "$BASE_URL/cli" \
-        -H "Content-Type: application/json" \
-        -d "{\"query\": \"$create_query\"}")
+    local create_response=$(curl -s -X POST "$BASE_URL/sql?mode=raw" \
+        -d "$create_query")
     
-    if echo "$create_response" | grep -q "Query OK"; then
+    if echo "$create_response" | grep -q "[{\"total\":0,\"error\":\"\",\"warning\":\"\"}]"; then
         log_info "Search index created successfully"
     else
         log_error "Failed to create search index"
         log_error "Response: $create_response"
         return 1
-    fi
-    
-    # Add Auto Embeddings configuration
-    local embedding_query="ALTER TABLE $INDEX_NAME ADD COLUMN embedding FLOAT_VECTOR knn_type='hnsw' knn_dims=384 knn_distance='cosine' knn_hnsw_m=16 knn_hnsw_ef_construction=200"
-    
-    local embedding_response=$(curl -s -X POST "$BASE_URL/cli" \
-        -H "Content-Type: application/json" \
-        -d "{\"query\": \"$embedding_query\"}")
-    
-    if echo "$embedding_response" | grep -q "Query OK"; then
-        log_info "Auto Embeddings configuration added successfully"
-        return 0
-    else
-        log_warn "Auto Embeddings configuration may have failed"
-        log_warn "Response: $embedding_response"
-        log_warn "Continuing with basic index..."
-        return 0
     fi
 }
 
@@ -378,6 +362,7 @@ main() {
     if ! create_search_index; then
         log_error "Failed to create search index"
         exit 1
+
     fi
     
     # Process and import markdown files

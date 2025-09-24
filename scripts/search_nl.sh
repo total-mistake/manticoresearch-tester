@@ -209,7 +209,6 @@ execute_search_query() {
             log_info "Search attempt $attempt/$MAX_RETRIES..."
         fi
         
-        # Try different search approaches for better AI search results
         local search_queries=(
             # Approach 1: KNN search with match query for semantic similarity
             "{\"index\": \"$INDEX_NAME\", \"query\": {\"bool\": {\"should\": [{\"match\": {\"content\": \"$query\"}}, {\"match\": {\"title\": \"$query\"}}]}}, \"limit\": $limit, \"_source\": [\"title\", \"url\", \"content\"]}"

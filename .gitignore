@@ -5,7 +5,7 @@ configs/connection.conf
 
 # Docker volumes and data
 output/
-logs/*.log
+logs/
 web/node_modules
 
 # Temporary files

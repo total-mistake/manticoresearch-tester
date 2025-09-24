@@ -114,11 +114,15 @@
             color: #6c757d;
         }
 
-        .search-options input[type="number"] {
+        .search-options input[type="number"], .search-options select {
             width: 80px;
             padding: 8px;
             border: 1px solid #dee2e6;
             border-radius: 4px;
+        }
+        
+        .search-options select {
+            width: 150px;
         }
 
         .loading {
@@ -364,6 +368,13 @@
 
             <div class="search-options">
                 <label>
+                    Поисковый движок:
+                    <select id="searchEngine">
+                        <option value="manticore">Manticore Search</option>
+                        <option value="sphinx">Sphinx Search</option>
+                    </select>
+                </label>
+                <label>
                     Лимит результатов:
                     <input type="number" id="limitInput" value="10" min="1" max="100">
                 </label>
@@ -436,6 +447,7 @@
                 const query = document.getElementById('searchInput').value.trim();
                 const limit = parseInt(document.getElementById('limitInput').value) || 10;
                 const verbose = document.getElementById('verboseMode').checked;
+                const engine = document.getElementById('searchEngine').value;
 
                 if (!query) {
                     alert('Пожалуйста, введите поисковый запрос');
@@ -449,7 +461,7 @@
                 const startTime = Date.now();
 
                 try {
-                    console.log(`[${new Date().toISOString()}] Начинаем поиск: "${query}"`);
+                    console.log(`[${new Date().toISOString()}] Начинаем поиск через ${engine}: "${query}"`);
                     
                     const response = await fetch(`${this.baseUrl}/search`, {
                         method: 'POST',
@@ -459,7 +471,8 @@
                         body: JSON.stringify({
                             query: query,
                             limit: limit,
-                            verbose: verbose
+                            verbose: verbose,
+                            engine: engine
                         })
                     });
 
