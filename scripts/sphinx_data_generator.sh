@@ -21,54 +21,23 @@ escape_xml() {
         tr -s ' '
 }
 
-# Извлечение заголовка из markdown
+# Извлечение заголовка из markdown (после #)
 extract_title() {
     local file_path="$1"
-    local title=""
-    
-    title=$(grep -m 1 "^#" "$file_path" | sed 's/^#* *//' | sed 's/\s*$//' 2>/dev/null || echo "")
-    
-    if [ -z "$title" ]; then
-        title=$(basename "$file_path" .md | tr '_' ' ')
-    fi
-    
-    echo "$title"
+    grep -m 1 "^# " "$file_path" | sed 's/^# //' 2>/dev/null || echo ""
 }
 
-# Извлечение URL из markdown
+# Извлечение URL из markdown (после **URL:**)
 extract_url() {
     local file_path="$1"
-    local url=""
-    
-    url=$(grep -i "^\*\*URL:\*\*" "$file_path" | sed 's/^\*\*URL:\*\*\s*//' | sed 's/^\s*//' | sed 's/\s*$//' | head -1 2>/dev/null || echo "")
-    
-    if [ -z "$url" ]; then
-        url=$(grep -oE "https?://[^\s]+" "$file_path" | head -1 2>/dev/null || echo "")
-    fi
-    
-    if [ -z "$url" ]; then
-        local filename=$(basename "$file_path" .md)
-        url="https://nethouse.ru/about/instructions/$filename"
-    fi
-    
-    echo "$url"
+    grep "^\*\*URL:\*\*" "$file_path" | sed 's/^\*\*URL:\*\* *//' 2>/dev/null || echo ""
 }
 
-# Извлечение содержимого из markdown
+# Извлечение контента (весь текст после URL до конца документа)
 extract_content() {
     local file_path="$1"
-    local content=""
-    
-    content=$(tail -n +2 "$file_path" | \
-        grep -v "^\*\*URL:\*\*" | \
-        sed '/^$/d' | \
-        sed 's/\r$//' | \
-        tr '\n' ' ' | \
-        sed 's/  */ /g' | \
-        sed 's/^ *//' | \
-        sed 's/ *$//' 2>/dev/null || echo "")
-    
-    echo "$content"
+    # Берем все строки после URL до конца файла, пропуская первую пустую строку
+    awk '/^\*\*URL:\*\*/{found=1; next} found {if(first_empty && NF==0) {first_empty=0; next} if(!first_empty && NF==0) first_empty=1; if(!first_empty || NF>0) print}' "$file_path" 2>/dev/null || echo ""
 }
 
 # Генерация XML заголовка
@@ -132,6 +101,11 @@ main() {
                 local url=$(extract_url "$file_path")
                 
                 if [ -n "$title" ] && [ -n "$content" ]; then
+                    echo "[DEBUG] Processing file: $(basename "$file_path")" >&2
+                    echo "[DEBUG] Title: $title" >&2
+                    echo "[DEBUG] URL: $url" >&2
+                    echo "[DEBUG] Content: ${content:0:100}..." >&2
+                    echo "[DEBUG] ---" >&2
                     generate_xml_document "$id" "$title" "$content" "$url"
                     id=$((id + 1))
                 fi

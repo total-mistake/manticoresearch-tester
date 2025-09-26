@@ -103,7 +103,7 @@ start_sphinx() {
         -p "$SPHINX_PORT:9312" \
         -p "$MYSQL_PORT:9304" \
         -v "$current_dir/configs/sphinx.conf:/etc/sphinx/sphinx.conf:ro" \
-        -v "$current_dir/scripts/sphinx_data_generator.sh:/usr/local/bin/sphinx_data_generator.sh:ro" \
+        -v "$current_dir/scripts/sphinx_rt_loader.sh:/usr/local/bin/sphinx_rt_loader.sh:ro" \
         -v "$current_dir/scripts/sphinx_entrypoint.sh:/entrypoint.sh:ro" \
         -v "$current_dir/data:/var/lib/sphinx/data" \
         -v "$current_dir/output:/var/lib/sphinx/output" \

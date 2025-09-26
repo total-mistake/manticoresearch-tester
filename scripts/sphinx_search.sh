@@ -122,8 +122,8 @@ perform_search() {
         log_info "Лимит результатов: $LIMIT"
     fi
     
-    # SQL запрос для поиска
-    local sql="SELECT id, url, created_at, title_text, content_text, WEIGHT() as score FROM documents WHERE MATCH('$escaped_query') ORDER BY score DESC LIMIT $LIMIT;"
+    # SQL запрос для поиска в RT индексе
+    local sql="SELECT id, url, title_text, content_text, WEIGHT() as score FROM documents WHERE MATCH('$escaped_query') ORDER BY score DESC LIMIT $LIMIT;"
     
     if [ "$VERBOSE" = true ]; then
         log_info "SQL запрос: $sql"
@@ -160,46 +160,39 @@ format_json_output() {
     
     local max_score=0
     if [ $count -gt 0 ]; then
-        max_score=$(echo "$results" | tail -n +2 | head -1 | awk -F'\t' '{print $NF}' | bc -l 2>/dev/null || echo "0")
+        max_score=$(echo "$results" | tail -n +2 | head -1 | awk -F'\t' '{print $5}' 2>/dev/null || echo "0")
     fi
     
-    echo "{"
-    echo "  \"total\": $count,"
-    echo "  \"took\": $duration,"
-    echo "  \"max_score\": $max_score,"
-    echo "  \"hits\": ["
+    printf '{\n'
+    printf '  "total": %d,\n' "$count"
+    printf '  "took": %d,\n' "$duration"
+    printf '  "max_score": %s,\n' "$max_score"
+    printf '  "hits": [\n'
     
-    local first=true
-    echo "$results" | tail -n +2 | while IFS=$'\t' read -r id url created_at title_text content_text score; do
-        if [ "$first" = true ]; then
-            first=false
-        else
-            echo ","
+    local counter=0
+    echo "$results" | tail -n +2 | while IFS=$'\t' read -r id url title_text content_text score; do
+        counter=$((counter + 1))
+        
+        if [ $counter -gt 1 ]; then
+            printf ',\n'
         fi
         
-        # Очищаем данные от лишних символов
-        local clean_title=$(echo "$title_text" | sed 's/"/\\"/g')
-        local clean_content=$(echo "$content_text" | sed 's/"/\\"/g')
+        # Очищаем данные для JSON
+        local clean_title=$(echo "$title_text" | sed 's/\\/\\\\/g; s/"/\\"/g; s/\t/ /g; s/\r//g; s/\n/ /g' | head -c 100)
+        local clean_content=$(echo "$content_text" | sed 's/\\/\\\\/g; s/"/\\"/g; s/\t/ /g; s/\r//g; s/\n/ /g' | head -c 300)
         
-        # Если заголовок пустой, создаем из URL
-        if [ -z "$clean_title" ]; then
-            clean_title=$(basename "$url" | sed 's/_/ /g' | sed 's/\..*$//')
-        fi
-        
-        echo "    {"
-        echo "      \"_id\": \"$id\","
-        echo "      \"_score\": $(echo "scale=3; $score / 1000" | bc -l),"
-        echo "      \"_source\": {"
-        echo "        \"title\": \"$clean_title\","
-        echo "        \"url\": \"$url\","
-        echo "        \"content\": \"$clean_content\""
-        echo "      }"
-        echo -n "    }"
+        printf '    {\n'
+        printf '      "_id": "%s",\n' "$id"
+        printf '      "_score": %s,\n' "$score"
+        printf '      "_source": {\n'
+        printf '        "title": "%s",\n' "$clean_title"
+        printf '        "url": "%s",\n' "$url"
+        printf '        "content": "%s"\n' "$clean_content"
+        printf '      }\n'
+        printf '    }'
     done
     
-    echo ""
-    echo "  ]"
-    echo "}"
+    printf '\n  ]\n}\n'
 }
 
 # Форматирование текстового вывода
@@ -225,7 +218,7 @@ format_text_output() {
     fi
     
     local counter=1
-    echo "$results" | tail -n +2 | while IFS=$'\t' read -r id url created_at title_text content_text score; do
+    echo "$results" | tail -n +2 | while IFS=$'\t' read -r id url title_text content_text score; do
         local title="$title_text"
         if [ -z "$title" ]; then
             title=$(basename "$url" | sed 's/_/ /g' | sed 's/\..*$//')
@@ -233,9 +226,8 @@ format_text_output() {
         
         echo "[$counter] 📄 $title (ID: $id, Score: $score)"
         echo "    🔗 $url"
-        echo "    📅 $(date -d @$created_at '+%Y-%m-%d %H:%M:%S')"
         if [ -n "$content_text" ]; then
-            echo "    📝 $content_text"
+            echo "    📝 $(echo "$content_text" | cut -c1-200)..."
         fi
         echo ""
         counter=$((counter + 1))
